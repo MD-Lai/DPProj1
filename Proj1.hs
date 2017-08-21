@@ -1,5 +1,5 @@
--- Code for Declarative Programming Project 1 
--- Marvin Lai 
+-- Code for Declarative Programming Project 1
+-- Marvin Lai
 -- Derl 754672
 -- Produces guesses for the game ChordProbe, as described in the project specs
 -- most most most of the time, program simply assumes correct input
@@ -8,11 +8,15 @@
 import Data.List
 import Data.Char
 
-data Pitch = Pitch Char Int 
+type Note = Char
+type Oct  = Int
+data Pitch = Pitch Note Oct
     deriving (Eq, Ord, Show)
-data Chord     = Chord Pitch Pitch Pitch
+{-data Chord     = Chord Pitch Pitch Pitch
     deriving (Eq, Ord, Show)
-type GameState = [Chord]
+-}
+-- GameState stores a list of all possible pitches remaining in the game
+type GameState = [Pitch]
 
 -- convert a string to a chord
 strToPitch :: String -> Pitch
@@ -31,8 +35,4 @@ intialGuess = ([guess1, guess2, guess3], [ch])
     where guess1 = "A1"
           guess2 = "C1"
           guess3 = "E1"
-          p1 = strToPitch guess1
-          p2 = strToPitch guess2
-          p3 = strToPitch guess3
-          ch = Chord p1 p2 p3
-
+          ch = [(Chord n o) | n <- ['A'..'G'], o = [1..3]]

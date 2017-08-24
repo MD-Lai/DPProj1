@@ -1,0 +1,14 @@
+From my understanding, it's something like this...
+
+After you receive an answer, you have a list of possible targets left.
+To find the next guess you're going to make,
+you look at every one of those - let's call the current one x -
+and find the maximum possible targets left if you were to guess x
+
+To do that, you look over the list of possible targets again,
+and for each one (let's call it y),
+you figure out what the answer would be if y is the actual target and you were to guess x.
+
+Then you group together all the ys that have the same answer if you were to guess x,
+find the group with the biggest size, and that size is the maximum possible targets left for x.
+And from there, you pick the x that has the smallest maximum possible targets.

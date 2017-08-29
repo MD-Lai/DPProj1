@@ -8,23 +8,15 @@ module Proj1 (initialGuess, nextGuess, GameState) where
 
 import Data.List
 import Data.Char
+import System.Random
 
 type Pitch     = String
 type Chord     = [Pitch]
 type Feedback  = (Int, Int, Int)
--- GameState stores a list of all possible guesses in the game
+-- GameState stores a list of all possible guesses in the gtailame
 type Scored    = (Chord, Feedback)
 type GameState = [Scored]
 
--- A1 C1 E1
-initialGuess :: (Chord, GameState)
-initialGuess = (hardInit, ch)
-    where g1 = "A1"
-          g2 = "C2"
-          g3 = "E3"
-          hardInit = [g1, g2, g3]
-          -- produces a score if each item in allGuesses were target
-          ch = map (chordScore hardInit) (allGuesses \\ [hardInit])
 {-
 Create all possible guesses in the game
 -}
@@ -51,6 +43,13 @@ my_response guess target = (right, rightNote, rightOctave)
 --   element n of l2.
 my_eqNth :: Eq a => Int -> [a] -> [a] -> Bool
 my_eqNth n l1 l2 = (l1 !! n) == (l2 !! n)
+-- A1 C1 E1
+initialGuess :: (Chord, GameState)
+initialGuess = (fg, gs)
+    where ag = allGuesses
+          fg = head ag
+          -- produces a score if each item in allGuesses were target
+          gs = map (chordScore fg) (ag \\ [fg])
 {-
 receive previous guess, with feedback
 feedback is ncorrect pitches, ncorrect notes, ncorrect octaves
@@ -61,17 +60,33 @@ nextGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
 nextGuess pv fb = betterGuess pv fb
 
 dumbGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
-dumbGuess (_, []) _   = error "no more guesses, generation algorithm sucks"
-dumbGuess (_, (x,_):xs) _ = (x, (dropGuess x xs))
+dumbGuess (_, []) _   = error "no more guesses, algorithm failed"
+dumbGuess (_, (x,_):xs) _ = (x, (dropChord x xs))
 
 betterGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
-betterGuess (_ , []) _ = error "no more guesses, the algorithm sucks"
+betterGuess (_ , []) _ = error "no more guesses, algorithm failed"
 betterGuess (lg, gs) fb =
   let
-    ng = findSameScore gs fb
-    gs1 = dropGuess ng gs
+    {- nextGuess is the next item in the list which gets the same score as
+    the Feedback -}
+    ng = head $ findSameScore fb gs
+    gs1 = dropChord ng gs
     gs2 = refactorGS ng gs1
     in (ng, gs2)
+
+{-
+lookAheadGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
+lookAheadGuess (_, []) _ = error "no more guesses, algorithm failed"
+lookAheadGuess (lg, gs) fb =
+  let
+    fl = head $ findSameScore fb gs -- first look guess
+    gsf = dropChord fl gs -- GameState without first look
+    gsfr = refactorGS fl gsf -- GameState after first look refactored
+
+    ng = fl -- next guess
+    gsr = gsfr -- GameState refactored
+    in (ng, gsr)
+-}
 
 refactorGS :: Chord -> GameState -> GameState
 refactorGS _ [] = []
@@ -80,17 +95,34 @@ refactorGS ch ((tg, _):gss) = (chordScore ch tg) : (refactorGS ch gss)
 chordScore :: Chord -> Chord -> Scored
 chordScore ch tg = (tg, my_response ch tg)
 
-dropGuess :: Chord -> GameState -> GameState
-dropGuess _ [] = []
-dropGuess ch ((g,sc):gss)
-   | (sort g) == (sort ch) = dropGuess ch gss
-   | otherwise = (g,sc) : dropGuess ch gss
+dropChord :: Chord -> GameState -> GameState
+dropChord _ [] = []
+dropChord ch ((g,sc):gss)
+   | (sort g) == (sort ch) = dropChord ch gss
+   | otherwise = (g,sc) : dropChord ch gss
 
-findSameScore :: GameState -> Feedback -> Chord
-findSameScore [] _ = []
-findSameScore ((g, sc):gss) fb -- guess, score, gamestates, feedback
-    | sc == fb = g
-    | otherwise = findSameScore gss fb
+findSameScore :: Feedback -> GameState -> [Chord]
+findSameScore _ [] = []
+findSameScore fb ((g, sc):gss) -- guess, score, gamestates, feedback
+    | sc == fb = g : findSameScore fb gss
+    | otherwise = findSameScore fb gss
 
 extractGS :: (Chord, GameState) -> GameState
 extractGS (_, gs) = gs
+
+righter :: Scored -> Scored -> Bool
+righter (_, (x,_,_)) (_, (y,_,_)) = x >= y
+
+wronger :: Scored -> Scored -> Bool
+wronger (_, (x,_,_)) (_, (y,_,_)) = x < y
+
+-- I think getting them ordered in number of correct pitches,
+-- results in better performance
+sortByCorrect :: GameState -> GameState
+sortByCorrect [] = []
+sortByCorrect (gs:[]) = [gs]
+sortByCorrect (gs:gss) = (sortByCorrect correcter) ++
+    [gs] ++ (sortByCorrect further)
+      where
+        correcter = filter (righter gs) gss
+        further   = filter (wronger gs) gss

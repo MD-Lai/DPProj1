@@ -13,9 +13,7 @@ import System.Random
 type Pitch     = String
 type Chord     = [Pitch]
 type Feedback  = (Int, Int, Int)
--- GameState stores a list of all possible guesses in the gtailame
-type Scored    = (Chord, Feedback)
-type GameState = [Scored]
+type GameState = [Chord]
 
 {-
 Create all possible guesses in the game
@@ -43,13 +41,15 @@ my_response guess target = (right, rightNote, rightOctave)
 --   element n of l2.
 my_eqNth :: Eq a => Int -> [a] -> [a] -> Bool
 my_eqNth n l1 l2 = (l1 !! n) == (l2 !! n)
+
 -- A1 C1 E1
+-- rework, perhaps A1 B1 C2
 initialGuess :: (Chord, GameState)
 initialGuess = (fg, gs)
     where ag = allGuesses
           fg = head ag
           -- produces a score if each item in allGuesses were target
-          gs = map (chordScore fg) (ag \\ [fg])
+          gs = tail ag
 {-
 receive previous guess, with feedback
 feedback is ncorrect pitches, ncorrect notes, ncorrect octaves
@@ -61,7 +61,7 @@ nextGuess pv fb = betterGuess pv fb
 
 dumbGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
 dumbGuess (_, []) _   = error "no more guesses, algorithm failed"
-dumbGuess (_, (x,_):xs) _ = (x, (dropChord x xs))
+dumbGuess (_, gs) _ = (head gs, tail gs)
 
 betterGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
 betterGuess (_ , []) _ = error "no more guesses, algorithm failed"
@@ -69,10 +69,8 @@ betterGuess (lg, gs) fb =
   let
     {- nextGuess is the next item in the list which gets the same score as
     the Feedback -}
-    ng = head $ findSameScore fb gs
-    gs1 = dropChord ng gs
-    gs2 = refactorGS ng gs1
-    in (ng, gs2)
+    ngs = findSameScore lg fb gs
+    in (head ngs, ngs)
 
 {-
 lookAheadGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
@@ -88,28 +86,38 @@ lookAheadGuess (lg, gs) fb =
     in (ng, gsr)
 -}
 
+{-
 refactorGS :: Chord -> GameState -> GameState
 refactorGS _ [] = []
 refactorGS ch ((tg, _):gss) = (chordScore ch tg) : (refactorGS ch gss)
+-}
 
-chordScore :: Chord -> Chord -> Scored
-chordScore ch tg = (tg, my_response ch tg)
+{-
+-- check, not sure if correct
+chordScore :: Chord -> Chord -> Feedback
+chordScore ch tg = my_response ch
+-}
 
+{-
 dropChord :: Chord -> GameState -> GameState
 dropChord _ [] = []
 dropChord ch ((g,sc):gss)
    | (sort g) == (sort ch) = dropChord ch gss
    | otherwise = (g,sc) : dropChord ch gss
+-}
 
-findSameScore :: Feedback -> GameState -> [Chord]
-findSameScore _ [] = []
-findSameScore fb ((g, sc):gss) -- guess, score, gamestates, feedback
-    | sc == fb = g : findSameScore fb gss
-    | otherwise = findSameScore fb gss
+findSameScore :: Chord -> Feedback -> GameState -> GameState
+findSameScore _ _ [] = []
+findSameScore ch fb (gs:gss) -- guess, score, gamestates, feedback
+    | (my_response ch gs) == fb = gs : findSameScore ch fb gss
+    | otherwise = findSameScore ch fb gss
 
+{-
 extractGS :: (Chord, GameState) -> GameState
 extractGS (_, gs) = gs
+-}
 
+{-
 righter :: Scored -> Scored -> Bool
 righter (_, (x,_,_)) (_, (y,_,_)) = x >= y
 
@@ -126,3 +134,4 @@ sortByCorrect (gs:gss) = (sortByCorrect correcter) ++
       where
         correcter = filter (righter gs) gss
         further   = filter (wronger gs) gss
+-}

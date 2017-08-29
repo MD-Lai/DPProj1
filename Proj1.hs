@@ -47,9 +47,9 @@ my_eqNth n l1 l2 = (l1 !! n) == (l2 !! n)
 initialGuess :: (Chord, GameState)
 initialGuess = (fg, gs)
     where ag = allGuesses
-          fg = head ag
+          fg = mid ag
           -- produces a score if each item in allGuesses were target
-          gs = tail ag
+          gs = ag \\ [fg]
 {-
 receive previous guess, with feedback
 feedback is ncorrect pitches, ncorrect notes, ncorrect octaves
@@ -61,16 +61,16 @@ nextGuess pv fb = betterGuess pv fb
 
 dumbGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
 dumbGuess (_, []) _   = error "no more guesses, algorithm failed"
-dumbGuess (_, gs) _ = (head gs, tail gs)
+dumbGuess (_, gs) _   = (head gs, tail gs)
 
 betterGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
-betterGuess (_ , []) _ = error "no more guesses, algorithm failed"
+betterGuess (_ , []) _  = error "no more guesses, algorithm failed"
 betterGuess (lg, gs) fb =
   let
     {- nextGuess is the next item in the list which gets the same score as
     the Feedback -}
     ngs = findSameScore lg fb gs
-    in (head ngs, ngs)
+    in (mid ngs, ngs)
 
 {-
 lookAheadGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
@@ -111,6 +111,10 @@ findSameScore _ _ [] = []
 findSameScore ch fb (gs:gss) -- guess, score, gamestates, feedback
     | (my_response ch gs) == fb = gs : findSameScore ch fb gss
     | otherwise = findSameScore ch fb gss
+
+mid :: [a] -> a
+mid [] = error "Empty list"
+mid x  = x !! (div (length x) 2)
 
 {-
 extractGS :: (Chord, GameState) -> GameState

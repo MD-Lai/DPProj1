@@ -18,7 +18,7 @@ type GameState = [Chord]
 {-
 Create all possible guesses in the game
 -}
-allGuesses :: [Chord]
+allGuesses :: GameState
 allGuesses =
   let ns = ([[n,o] | n <- ['A'..'G'], o <- ['1'..'3']])
       in (nub [sort [p1,p2,p3] -- remove duplicate Chords
@@ -27,7 +27,7 @@ allGuesses =
 
 -- score function stolen from the supplied Proj1Test.hs,
 -- modified to work with map
-my_response :: Chord -> Chord -> (Int,Int,Int)
+my_response :: Chord -> Chord -> Feedback
 my_response guess target = (right, rightNote, rightOctave)
   where guess'      = nub guess
         right       = length $ intersect guess' target
@@ -69,8 +69,23 @@ betterGuess (lg, gs) fb =
   let
     {- nextGuess is the next item in the list which gets the same score as
     the Feedback -}
-    ngs = findSameScore lg fb gs
+    ngs = filter (sameScore lg fb) gs
     in (mid ngs, ngs)
+
+{- replaced by filter
+findSameScore :: Chord -> Feedback -> GameState -> GameState
+findSameScore _ _ [] = []
+findSameScore ch fb (gs:gss) -- guess, score, gamestates, feedback
+    | (my_response ch gs) == fb = gs : findSameScore ch fb gss
+    | otherwise = findSameScore ch fb gss
+-}
+
+sameScore :: Chord -> Feedback -> Chord -> Bool
+sameScore ch fb gs = my_response ch gs == fb
+
+mid :: [a] -> a
+mid [] = error "Empty list"
+mid x  = x !! (div (length x) 2)
 
 {-
 lookAheadGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
@@ -105,16 +120,6 @@ dropChord ch ((g,sc):gss)
    | (sort g) == (sort ch) = dropChord ch gss
    | otherwise = (g,sc) : dropChord ch gss
 -}
-
-findSameScore :: Chord -> Feedback -> GameState -> GameState
-findSameScore _ _ [] = []
-findSameScore ch fb (gs:gss) -- guess, score, gamestates, feedback
-    | (my_response ch gs) == fb = gs : findSameScore ch fb gss
-    | otherwise = findSameScore ch fb gss
-
-mid :: [a] -> a
-mid [] = error "Empty list"
-mid x  = x !! (div (length x) 2)
 
 {-
 extractGS :: (Chord, GameState) -> GameState

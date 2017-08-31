@@ -8,7 +8,6 @@ module Proj1 (initialGuess, nextGuess, GameState) where
 
 import Data.List
 import Data.Char
-import System.Random
 
 type Pitch     = String
 type Chord     = [Pitch]

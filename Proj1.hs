@@ -14,40 +14,19 @@ type Chord     = [Pitch]
 type Feedback  = (Int, Int, Int)
 type GameState = [Chord]
 
-{-
-Create all possible guesses in the game
--}
+--Create all possible guesses in the game
 allGuesses :: GameState
 allGuesses =
   let ns = ([[n,o] | n <- ['A'..'G'], o <- ['1'..'3']])
       in (nub [sort [p1,p2,p3] -- remove duplicate Chords
           | p1 <- ns, p2 <- ns, p3 <- ns, p1 /= p2, p2/=p3, p1/= p3])
-          -- prevent items from having duplicate pitches
+          -- no duplicate pitches
 
--- score function stolen from the supplied Proj1Test.hs,
--- modified to work with map
--- need to rewrite this ourselves
-my_response :: Chord -> Chord -> Feedback
-my_response guess target = (right, rightNote, rightOctave)
-  where guess'      = nub guess
-        right       = length $ intersect guess' target
-        num         = length guess'
-        rightNote   = num - (length $ deleteFirstsBy (my_eqNth 0) guess' target)
-                    - right
-        rightOctave = num - (length $ deleteFirstsBy (my_eqNth 1) guess' target)
-                    - right
-
--- | eqNth n l1 l2 returns True iff element n of l1 is equal to
---   element n of l2.
-my_eqNth :: Eq a => Int -> [a] -> [a] -> Bool
-my_eqNth n l1 l2 = (l1 !! n) == (l2 !! n)
-
--- A1 C1 E1
--- rework, perhaps A1 B1 C2
+-- A1 B2 C3
 initialGuess :: (Chord, GameState)
 initialGuess = (fg, gs)
     where ag = allGuesses
-          fg = ["A1", "B2", "C3"]
+          fg = ["A1", "C2", "E3"]
           --fg = mid ag
           -- produces a score if each item in allGuesses were target
           gs = ag \\ [fg]
@@ -60,18 +39,47 @@ generate another guess with an updated GameState
 nextGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
 nextGuess pv fb = betterGuess pv fb
 
+-- throws out the next guess available in the gamestate
 dumbGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
 dumbGuess (_, []) _   = error "no more guesses, algorithm failed"
 dumbGuess (_, gs) _   = (head gs, tail gs)
 
+-- throws out a guess which would result in the same feedback
+-- if that guess was the target for the last guess
 betterGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
 betterGuess (_ , []) _  = error "no more guesses, algorithm failed"
 betterGuess (lg, gs) fb =
   let
-    {- nextGuess is the next item in the list which gets the same score as
-    the Feedback -}
+    {- nextGuess is the middleth item of the list of all guesses for which
+    when taken as a target will result in the same score-}
     ngs = filter (sameScore lg fb) gs
     in (mid ngs, ngs)
+
+
+-- takes prev guess, feedback, and guess target
+-- checks to see if guess target would result in same feedback score
+sameScore :: Chord -> Feedback -> Chord -> Bool
+sameScore ch fb gs = my_response ch gs == fb
+
+-- scoring function with own interpretation
+my_response :: Chord -> Chord -> Feedback
+my_response gs tg = (pitch, note, oct)
+  where gsn   = nub gs
+        n     = length gsn
+        pitch = n - length (tg \\ gsn)
+        note  = n - length ((getNths 0 tg) \\ (getNths 0 gsn)) - pitch
+        oct   = n - length ((getNths 1 tg) \\ (getNths 1 gsn))- pitch
+
+-- gets the nth element of each list in a list of lists
+getNths :: Eq a => Int -> [[a]] -> [a]
+getNths _ []     = []
+getNths n (x:xs) = (x !! n) : getNths n xs
+
+mid :: [a] -> a
+mid [] = error "Empty list"
+mid x  = x !! (div (length x) 2)
+
+
 
 {- replaced by filter
 findSameScore :: Chord -> Feedback -> GameState -> GameState
@@ -81,12 +89,25 @@ findSameScore ch fb (gs:gss) -- guess, score, gamestates, feedback
     | otherwise = findSameScore ch fb gss
 -}
 
-sameScore :: Chord -> Feedback -> Chord -> Bool
-sameScore ch fb gs = my_response ch gs == fb
+{-
+-- score function stolen from the supplied Proj1Test.hs,
+-- modified to work with map
+-- need to rewrite this ourselves
+giv_response :: Chord -> Chord -> Feedback
+giv_response guess target = (right, rightNote, rightOctave)
+  where guess'      = nub guess -- remove duplicated pitches
+        right       = length $ intersect guess' target -- how many are the same between the two
+        num         = length guess' -- total number of guesses (should be 3)
+        rightNote   = num - (length $ deleteFirstsBy (giv_eqNth 0) guess' target) 
+                    - right -- checks how many right notes there are
+        rightOctave = num - (length $ deleteFirstsBy (giv_eqNth 1) guess' target)
+                    - right -- checks how many right octaves there are
 
-mid :: [a] -> a
-mid [] = error "Empty list"
-mid x  = x !! (div (length x) 2)
+-- | eqNth n l1 l2 returns True iff element n of l1 is equal to
+--   element n of l2.
+giv_eqNth :: Eq a => Int -> [a] -> [a] -> Bool
+giv_eqNth n l1 l2 = (l1 !! n) == (l2 !! n)
+-}
 
 {-
 lookAheadGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)

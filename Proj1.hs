@@ -26,6 +26,7 @@ allGuesses =
 
 -- score function stolen from the supplied Proj1Test.hs,
 -- modified to work with map
+-- need to rewrite this ourselves
 my_response :: Chord -> Chord -> Feedback
 my_response guess target = (right, rightNote, rightOctave)
   where guess'      = nub guess
@@ -46,7 +47,8 @@ my_eqNth n l1 l2 = (l1 !! n) == (l2 !! n)
 initialGuess :: (Chord, GameState)
 initialGuess = (fg, gs)
     where ag = allGuesses
-          fg = mid ag
+          fg = ["A1", "B2", "C3"]
+          --fg = mid ag
           -- produces a score if each item in allGuesses were target
           gs = ag \\ [fg]
 {-

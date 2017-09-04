@@ -98,7 +98,7 @@ giv_response guess target = (right, rightNote, rightOctave)
   where guess'      = nub guess -- remove duplicated pitches
         right       = length $ intersect guess' target -- how many are the same between the two
         num         = length guess' -- total number of guesses (should be 3)
-        rightNote   = num - (length $ deleteFirstsBy (giv_eqNth 0) guess' target) 
+        rightNote   = num - (length $ deleteFirstsBy (giv_eqNth 0) guess' target)
                     - right -- checks how many right notes there are
         rightOctave = num - (length $ deleteFirstsBy (giv_eqNth 1) guess' target)
                     - right -- checks how many right octaves there are

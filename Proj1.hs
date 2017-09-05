@@ -34,7 +34,7 @@ initialGuess :: (Chord, GameState)
 initialGuess = (fg, gs)
     where ag = allGuesses
           -- Just a hardcoded guess, gives info on every octave and some notes
-          fg = ["A1", "C2", "E3"]
+          fg = ["A1", "B2", "C3"]
           -- remove current guess from GameState
           -- game would either end if correct, or continue if not correct
           -- hence, we don't want to guess it again

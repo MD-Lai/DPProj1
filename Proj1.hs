@@ -17,14 +17,17 @@ type Chord     = [Pitch]
 type Feedback  = (Int, Int, Int)
 type GameState = [Chord]
 
+-- set of all possible notes and octaves
+notes = ['A'..'G']
+octaves = ['1'..'3']
+
 -- Create all possible guesses in the game
 -- Basis of Gamestate is the remaining possible guesses
 allGuesses :: GameState
 allGuesses =
-  let ns = ([[n,o] | n <- ['A'..'G'], o <- ['1'..'3']])
-      in (nub [sort [p1,p2,p3] -- remove duplicate Chords
-          | p1 <- ns, p2 <- ns, p3 <- ns, p1 /= p2, p2/=p3, p1/= p3])
-          -- no duplicate pitches
+  let ns = ([[n,o] | n <- notes, o <- octaves])
+      in ([[p1,p2,p3] | p1 <- ns, p2 <- ns, p3 <- ns, p1 < p2, p2 < p3])
+      -- prevents duplicate chords
 
 -- Initial guess, gives a decent amount of info to prune GameState
 initialGuess :: (Chord, GameState)
@@ -33,13 +36,11 @@ initialGuess = (fg, gs)
           -- Just a hardcoded guess, gives info on every octave and some notes
           fg = ["A1", "C2", "E3"]
           -- remove current guess from GameState
-          -- game would either end if correct, or continue if not be a correct
+          -- game would either end if correct, or continue if not correct
           -- hence, we don't want to guess it again
           gs = ag \\ [fg]
 
 -- receive previous guess, with feedback
--- feedback is ncorrect pitches, ncorrect notes, ncorrect octaves
--- BUT correct pitches are not counted as correct notes or octaves
 -- generate another guess with an updated GameState
 nextGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
 nextGuess pv fb = betterGuess pv fb
@@ -48,16 +49,16 @@ nextGuess pv fb = betterGuess pv fb
 -- continue until it finds a correct guess
 dumbGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
 dumbGuess (_, []) _   = error "no more guesses, algorithm failed"
-dumbGuess (_, gst) _   = (head gs, tail gst)
+dumbGuess (_, gst) _   = (head gst, tail gst)
 
 -- throws out a guess which would result in the same feedback if
 -- that guess was the target for the last guess
 betterGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
 betterGuess (_ , []) _  = error "no more guesses, algorithm failed"
 betterGuess (lg, gst) fb =
-  let
-    ngst = filter (sameScore lg fb) gst
-    in (mid ngst, ngst)
+  let ngst = filter (sameScore lg fb) gst
+      ng = mid ngst
+    in (ng, ngst \\ [ng])
 
 -- takes prev guess, feedback, and "target"
 -- checks to see if guess target would result in same feedback score
@@ -65,6 +66,8 @@ sameScore :: Chord -> Feedback -> Chord -> Bool
 sameScore ch fb tg = my_response ch tg == fb
 
 -- scoring function with own interpretation
+-- feedback is ncorrect pitches, ncorrect notes, ncorrect octaves
+-- BUT correct pitches are not counted as correct notes or octaves
 my_response :: Chord -> Chord -> Feedback
 my_response gs tg = (pitch, note, oct)
   where gsn   = nub gs

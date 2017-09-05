@@ -58,6 +58,7 @@ betterGuess (_ , []) _  = error "no more guesses, algorithm failed"
 betterGuess (lg, gst) fb =
   let ngst = filter (sameScore lg fb) gst
       ng = mid ngst
+      --ng = ngst !! (mod 2017 (length ngst))
     in (ng, ngst \\ [ng])
 
 -- takes prev guess, feedback, and "target"

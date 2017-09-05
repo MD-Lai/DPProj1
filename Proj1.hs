@@ -54,10 +54,10 @@ dumbGuess (_, gst) _  = (head gst, tail gst)
 -- throws out a guess which would result in the same feedback if
 -- that guess was the target for the last guess
 betterGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
-betterGuess (_ , []) _  = error "no more guesses, algorithm failed"
+betterGuess (_ , []) _   = error "no more guesses, algorithm failed"
 betterGuess (lg, gst) fb =
   let ngst = filter (sameScore lg fb) gst
-      ng = mid ngst
+      ng   = mid ngst
       --ng = ngst !! (mod 2017 (length ngst))
       in (ng, ngst \\ [ng])
 

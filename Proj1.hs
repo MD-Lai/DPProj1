@@ -32,13 +32,13 @@ allGuesses =
 -- Initial guess, gives a decent amount of info to prune GameState
 initialGuess :: (Chord, GameState)
 initialGuess = (fg, gs)
-    where ag = allGuesses
+    where fg = ["A1", "B2", "C3"]
+          gs = allGuesses \\ [fg]
           -- Just a hardcoded guess, gives info on every octave and some notes
-          fg = ["A1", "B2", "C3"]
           -- remove current guess from GameState
           -- game would either end if correct, or continue if not correct
           -- hence, we don't want to guess it again
-          gs = ag \\ [fg]
+
 
 -- receive previous guess, with feedback
 -- generate another guess with an updated GameState
@@ -49,7 +49,7 @@ nextGuess pv fb = betterGuess pv fb
 -- continue until it finds a correct guess
 dumbGuess :: (Chord,GameState) -> Feedback -> (Chord,GameState)
 dumbGuess (_, []) _   = error "no more guesses, algorithm failed"
-dumbGuess (_, gst) _   = (head gst, tail gst)
+dumbGuess (_, gst) _  = (head gst, tail gst)
 
 -- throws out a guess which would result in the same feedback if
 -- that guess was the target for the last guess
@@ -59,7 +59,7 @@ betterGuess (lg, gst) fb =
   let ngst = filter (sameScore lg fb) gst
       ng = mid ngst
       --ng = ngst !! (mod 2017 (length ngst))
-    in (ng, ngst \\ [ng])
+      in (ng, ngst \\ [ng])
 
 -- takes prev guess, feedback, and "target"
 -- checks to see if guess target would result in same feedback score
